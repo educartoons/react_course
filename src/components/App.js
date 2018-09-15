@@ -4,14 +4,33 @@ import Inventory from "./Inventory";
 import Header from "./Header";
 import sampleFishes from "../sample-fishes";
 import Fish from "./Fish";
+import base from "../base";
 
 class App extends React.Component {
   state = {
     fishes: {},
     order: {}
   };
+  componentDidUpdate() {
+    localStorage.setItem(
+      this.props.match.params.storeId,
+      JSON.stringify(this.state.order)
+    );
+  }
   componentDidMount() {
-    this.loadFishes();
+    const { params } = this.props.match;
+
+    const localStorageRef = localStorage.getItem(params.storeId);
+    if (localStorageRef) {
+      this.setState({
+        order: JSON.parse(localStorageRef)
+      });
+    }
+
+    this.ref = base.syncState(`${params.storeId}/fishes`, {
+      context: this,
+      state: "fishes"
+    });
   }
 
   addFish = fish => {
@@ -20,6 +39,18 @@ class App extends React.Component {
     this.setState({
       fishes: fishes
     });
+  };
+  updateFish = (key, updatedFish) => {
+    // 1. Take a copy of the current state
+    const fishes = { ...this.state.fishes };
+    fishes[key] = updatedFish;
+    this.setState({ fishes });
+  };
+  deleteFish = key => {
+    // 1. Take a copy of the current state
+    const fishes = { ...this.state.fishes };
+    fishes[key] = null;
+    this.setState({ fishes: fishes });
   };
   loadFishes = () => {
     this.setState({
@@ -43,9 +74,9 @@ class App extends React.Component {
           <ul className="fishes">
             {Object.keys(this.state.fishes).map(key => (
               <Fish
-                addToOrder={this.addToOrder}
                 key={key}
                 index={key}
+                addToOrder={this.addToOrder}
                 details={this.state.fishes[key]}
               />
             ))}
@@ -56,6 +87,8 @@ class App extends React.Component {
           fishes={this.state.fishes}
           loadFishes={this.loadFishes}
           addFish={this.addFish}
+          updateFish={this.updateFish}
+          deleteFish={this.deleteFish}
         />
       </div>
     );
